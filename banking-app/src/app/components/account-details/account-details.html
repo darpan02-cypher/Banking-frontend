@@ -1,0 +1,103 @@
+<div class="card">
+  <div class="card-header">Account Details</div>
+  <div class="card-body">
+    <h6 class="mb-3">Add New Account</h6>
+    <form (ngSubmit)="addAccount()" class="row g-2 align-items-end mb-4">
+      <div class="col-12 col-md">
+        <label for="newAccountNumber" class="form-label">Account Number</label>
+        <input id="newAccountNumber" type="text" class="form-control form-control-sm" [(ngModel)]="newAccount.accountNumber" name="newAccountNumber" required>
+      </div>
+      <div class="col-12 col-md">
+        <label for="newAccountType" class="form-label">Account Type</label>
+        <input id="newAccountType" type="text" class="form-control form-control-sm" [(ngModel)]="newAccount.accountType" name="newAccountType" required>
+      </div>
+      <div class="col-12 col-md">
+        <label for="newBalance" class="form-label">Balance</label>
+        <input id="newBalance" type="number" step="0.01" class="form-control form-control-sm" [(ngModel)]="newAccount.balance" name="newBalance">
+      </div>
+      <div class="col-12 col-md">
+        <label for="newCurrency" class="form-label">Currency</label>
+        <input id="newCurrency" type="text" class="form-control form-control-sm" [(ngModel)]="newAccount.currency" name="newCurrency">
+      </div>
+      <div class="col-12 col-md">
+        <label for="newStatus" class="form-label">Status</label>
+        <select id="newStatus" class="form-select form-select-sm" [(ngModel)]="newAccount.status" name="newStatus">
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+          <option value="Suspended">Suspended</option>
+        </select>
+      </div>
+      <div class="col-12 col-md">
+        <label for="newCreatedDate" class="form-label">Created Date</label>
+        <input id="newCreatedDate" type="date" class="form-control form-control-sm" [(ngModel)]="newAccount.createdDate" name="newCreatedDate">
+      </div>
+      <div class="col-12 col-md-auto">
+        <button type="submit" class="btn btn-sm btn-success">Add Account</button>
+      </div>
+    </form>
+
+    <div class="table-responsive">
+      <table class="table table-striped table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th scope="col">Account Number</th>
+            <th scope="col">Account Type</th>
+            <th scope="col">Balance</th>
+            <th scope="col">Currency</th>
+            <th scope="col">Status</th>
+            <th scope="col">Created Date</th>
+            <th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (account of accounts; track account.accountNumber) {
+            <tr>
+              @if (!isEditing(account.accountNumber)) {
+                <td>{{ account.accountNumber }}</td>
+                <td>{{ account.accountType }}</td>
+                <td class="fw-bold text-success">{{ account.balance | number: '1.2-2' }}</td>
+                <td>{{ account.currency }}</td>
+                <td><span class="badge" [ngClass]="statusBadgeClass(account.status)">{{ account.status }}</span></td>
+                <td>{{ account.createdDate }}</td>
+                <td class="d-flex gap-1">
+                  <button type="button" class="btn btn-sm btn-outline-primary" (click)="edit(account.accountNumber)">Edit</button>
+                  <button type="button" class="btn btn-sm btn-outline-danger" (click)="delete(account.accountNumber)">Delete</button>
+                </td>
+              } @else {
+                <td>{{ account.accountNumber }}</td>
+                <td>
+                  <input type="text" class="form-control form-control-sm" [(ngModel)]="account.accountType"
+                         [name]="'type-' + account.accountNumber" [attr.aria-label]="'Account type for ' + account.accountNumber">
+                </td>
+                <td>
+                  <input type="number" step="0.01" class="form-control form-control-sm" [(ngModel)]="account.balance"
+                         [name]="'balance-' + account.accountNumber" [attr.aria-label]="'Balance for ' + account.accountNumber">
+                </td>
+                <td>
+                  <input type="text" class="form-control form-control-sm" [(ngModel)]="account.currency"
+                         [name]="'currency-' + account.accountNumber" [attr.aria-label]="'Currency for ' + account.accountNumber">
+                </td>
+                <td>
+                  <select class="form-select form-select-sm" [(ngModel)]="account.status"
+                          [name]="'status-' + account.accountNumber" [attr.aria-label]="'Status for ' + account.accountNumber">
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                    <option value="Suspended">Suspended</option>
+                  </select>
+                </td>
+                <td>
+                  <input type="date" class="form-control form-control-sm" [(ngModel)]="account.createdDate"
+                         [name]="'date-' + account.accountNumber" [attr.aria-label]="'Created date for ' + account.accountNumber">
+                </td>
+                <td class="d-flex gap-1">
+                  <button type="button" class="btn btn-sm btn-primary" (click)="save()">Save</button>
+                  <button type="button" class="btn btn-sm btn-secondary" (click)="cancel()">Cancel</button>
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
