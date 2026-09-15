@@ -1,17 +1,7 @@
-import { Component, Input, signal, inject, PLATFORM_ID } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
-export interface Account {
-  accountNumber: string;
-  accountType: string;
-  balance: number;
-  currency: string;
-  status: string;
-  createdDate: string;
-}
-
-const STORAGE_KEY = 'banking-app-accounts';
+import { AccountService, Account, AccountType } from '../../services/account.service';
 
 @Component({
   selector: 'app-account-details',
@@ -20,80 +10,70 @@ const STORAGE_KEY = 'banking-app-accounts';
   templateUrl: './account-details.html',
   styleUrl: './account-details.css'
 })
-export class AccountDetailsComponent {
-  private readonly platformId = inject(PLATFORM_ID);
+export class AccountDetailsComponent implements OnInit {
+  private readonly accountService = inject(AccountService);
 
-  @Input() accounts: Account[] = this.loadAccounts();
-
+  protected accounts: Account[] = [];
   protected readonly editingNumber = signal<string | null>(null);
+  protected errorMessage = signal<string | null>(null);
 
-  protected newAccount: Account = this.emptyAccount();
+  protected newAccount: { customerId: number | null; accPin: string; accountType: AccountType } = this.emptyAccount();
 
-  isEditing(accountNumber: string): boolean {
-    return this.editingNumber() === accountNumber;
+  ngOnInit(): void {
+    this.loadAccounts();
   }
 
-  statusBadgeClass(status: string): string {
-    switch (status.toLowerCase()) {
-      case 'active': return 'bg-success';
-      case 'inactive': return 'bg-danger';
-      case 'suspended': return 'bg-warning text-dark';
-      default: return 'bg-secondary';
-    }
+  loadAccounts(): void {
+    this.accountService.getAllAccounts().subscribe({
+      next: accounts => this.accounts = accounts,
+      error: () => this.errorMessage.set('Failed to load accounts. Is the backend running on http://localhost:8083?')
+    });
   }
 
-  edit(accountNumber: string): void {
-    this.editingNumber.set(accountNumber);
+  isEditing(accNo: string): boolean {
+    return this.editingNumber() === accNo;
   }
 
-  save(): void {
-    this.editingNumber.set(null);
-    this.persist();
+  edit(accNo: string): void {
+    this.editingNumber.set(accNo);
+  }
+
+  save(account: Account): void {
+    this.accountService.updateAccount(account.accNo, { accPin: account.accPin, accountType: account.accountType }).subscribe({
+      next: () => this.editingNumber.set(null),
+      error: () => this.errorMessage.set('Failed to update account.')
+    });
   }
 
   cancel(): void {
     this.editingNumber.set(null);
+    this.loadAccounts();
   }
 
-  delete(accountNumber: string): void {
-    this.accounts = this.accounts.filter(a => a.accountNumber !== accountNumber);
-    this.persist();
+  delete(accNo: string): void {
+    this.accountService.deleteAccount(accNo).subscribe({
+      next: () => this.accounts = this.accounts.filter(a => a.accNo !== accNo),
+      error: () => this.errorMessage.set('Failed to delete account.')
+    });
   }
 
   addAccount(): void {
-    if (!this.newAccount.accountNumber || !this.newAccount.accountType) {
+    if (!this.newAccount.customerId || !this.newAccount.accPin) {
       return;
     }
-    this.accounts = [...this.accounts, this.newAccount];
-    this.newAccount = this.emptyAccount();
-    this.persist();
+    this.accountService.createAccountForCustomer(this.newAccount.customerId, {
+      accPin: this.newAccount.accPin,
+      accountType: this.newAccount.accountType
+    }).subscribe({
+      next: created => {
+        this.accounts = [...this.accounts, created];
+        this.newAccount = this.emptyAccount();
+      },
+      error: () => this.errorMessage.set('Failed to create account. Check that the customer ID exists.')
+    });
   }
 
-  private emptyAccount(): Account {
-    return { accountNumber: '', accountType: '', balance: 0, currency: 'USD', status: 'Active', createdDate: '' };
-  }
-
-  private loadAccounts(): Account[] {
-    if (isPlatformBrowser(this.platformId)) {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        try {
-          return JSON.parse(stored);
-        } catch {
-          // ignore malformed data and fall back to defaults
-        }
-      }
-    }
-    return [
-      { accountNumber: '1234567890', accountType: 'Checking', balance: 5250.50, currency: 'USD', status: 'Active', createdDate: '2024-01-15' },
-      { accountNumber: '2345678901', accountType: 'Savings', balance: 12800.75, currency: 'USD', status: 'Active', createdDate: '2023-06-20' },
-      { accountNumber: '3456789012', accountType: 'Checking', balance: 320.00, currency: 'USD', status: 'Suspended', createdDate: '2022-11-05' }
-    ];
-  }
-
-  private persist(): void {
-    if (isPlatformBrowser(this.platformId)) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.accounts));
-    }
+  private emptyAccount(): { customerId: number | null; accPin: string; accountType: AccountType } {
+    return { customerId: null, accPin: '', accountType: 'SAVINGS' };
   }
 }

@@ -1,23 +1,22 @@
 <div class="card">
   <div class="card-header">Customer Details</div>
   <div class="card-body">
+    @if (errorMessage()) {
+      <div class="alert alert-danger alert-dismissible" role="alert">
+        {{ errorMessage() }}
+        <button type="button" class="btn-close" (click)="errorMessage.set(null)"></button>
+      </div>
+    }
+
     <h6 class="mb-3">Add New Customer</h6>
     <form (ngSubmit)="addCustomer()" class="row g-2 align-items-end mb-4">
       <div class="col-12 col-md">
-        <label for="newCustomerId" class="form-label">Customer ID</label>
-        <input id="newCustomerId" type="text" class="form-control form-control-sm" [(ngModel)]="newCustomer.customerId" name="newCustomerId" required>
-      </div>
-      <div class="col-12 col-md">
         <label for="newCustomerName" class="form-label">Name</label>
-        <input id="newCustomerName" type="text" class="form-control form-control-sm" [(ngModel)]="newCustomer.customerName" name="newCustomerName" required>
+        <input id="newCustomerName" type="text" class="form-control form-control-sm" [(ngModel)]="newCustomer.name" name="newCustomerName" required>
       </div>
       <div class="col-12 col-md">
-        <label for="newEmail" class="form-label">Email</label>
-        <input id="newEmail" type="email" class="form-control form-control-sm" [(ngModel)]="newCustomer.email" name="newEmail">
-      </div>
-      <div class="col-12 col-md">
-        <label for="newPhone" class="form-label">Phone</label>
-        <input id="newPhone" type="tel" class="form-control form-control-sm" [(ngModel)]="newCustomer.phone" name="newPhone">
+        <label for="newAge" class="form-label">Age</label>
+        <input id="newAge" type="number" min="0" class="form-control form-control-sm" [(ngModel)]="newCustomer.age" name="newAge" required>
       </div>
       <div class="col-12 col-md">
         <label for="newAddress" class="form-label">Address</label>
@@ -34,8 +33,7 @@
           <tr>
             <th scope="col">Customer ID</th>
             <th scope="col">Name</th>
-            <th scope="col">Email</th>
-            <th scope="col">Phone</th>
+            <th scope="col">Age</th>
             <th scope="col">Address</th>
             <th scope="col">Actions</th>
           </tr>
@@ -45,9 +43,8 @@
             <tr>
               @if (!isEditing(customer.customerId)) {
                 <td>{{ customer.customerId }}</td>
-                <td>{{ customer.customerName }}</td>
-                <td>{{ customer.email }}</td>
-                <td>{{ customer.phone }}</td>
+                <td>{{ customer.name }}</td>
+                <td>{{ customer.age }}</td>
                 <td>{{ customer.address }}</td>
                 <td class="d-flex gap-1">
                   <button type="button" class="btn btn-sm btn-outline-primary" (click)="edit(customer.customerId)">Edit</button>
@@ -56,23 +53,19 @@
               } @else {
                 <td>{{ customer.customerId }}</td>
                 <td>
-                  <input type="text" class="form-control form-control-sm" [(ngModel)]="customer.customerName"
+                  <input type="text" class="form-control form-control-sm" [(ngModel)]="customer.name"
                          [name]="'name-' + customer.customerId" [attr.aria-label]="'Name for ' + customer.customerId">
                 </td>
                 <td>
-                  <input type="email" class="form-control form-control-sm" [(ngModel)]="customer.email"
-                         [name]="'email-' + customer.customerId" [attr.aria-label]="'Email for ' + customer.customerId">
-                </td>
-                <td>
-                  <input type="tel" class="form-control form-control-sm" [(ngModel)]="customer.phone"
-                         [name]="'phone-' + customer.customerId" [attr.aria-label]="'Phone for ' + customer.customerId">
+                  <input type="number" min="0" class="form-control form-control-sm" [(ngModel)]="customer.age"
+                         [name]="'age-' + customer.customerId" [attr.aria-label]="'Age for ' + customer.customerId">
                 </td>
                 <td>
                   <input type="text" class="form-control form-control-sm" [(ngModel)]="customer.address"
                          [name]="'address-' + customer.customerId" [attr.aria-label]="'Address for ' + customer.customerId">
                 </td>
                 <td class="d-flex gap-1">
-                  <button type="button" class="btn btn-sm btn-primary" (click)="save()">Save</button>
+                  <button type="button" class="btn btn-sm btn-primary" (click)="save(customer)">Save</button>
                   <button type="button" class="btn btn-sm btn-secondary" (click)="cancel()">Cancel</button>
                 </td>
               }
