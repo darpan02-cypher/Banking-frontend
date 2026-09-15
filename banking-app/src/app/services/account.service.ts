@@ -5,6 +5,9 @@ import { API_BASE_URL } from '../core/api-config';
 
 export type AccountType = 'SAVINGS' | 'CURRENT';
 
+
+//this interface represents the structure of an account object in the banking application. It includes properties such as id, accNo, accPin, accountType, and customerId. The NewAccount type is a subset of the Account interface, containing only the accPin and accountType properties, which are required when creating a new account.
+//or model createAccountForCustomer
 export interface Account {
   id: number;
   accNo: string;
