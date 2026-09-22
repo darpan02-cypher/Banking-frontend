@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AccountService, Account, AccountType } from '../../services/account.service';
+import { CustomerService } from '../../services/customer.service';
 
 @Component({
   selector: 'app-account-details',
@@ -12,10 +13,14 @@ import { AccountService, Account, AccountType } from '../../services/account.ser
 })
 export class AccountDetailsComponent implements OnInit {
   private readonly accountService = inject(AccountService);
+  private readonly customerService = inject(CustomerService);
 
   protected accounts: Account[] = [];
   protected readonly editingNumber = signal<string | null>(null);
+  protected readonly newPinVisible = signal(false);
+  protected readonly visibleAccountPin = signal<string | null>(null);
   protected errorMessage = signal<string | null>(null);
+  protected successMessage = signal<string | null>(null);
 
   protected newAccount: { customerId: number | null; accPin: string; accountType: AccountType } = this.emptyAccount();
 
@@ -38,9 +43,20 @@ export class AccountDetailsComponent implements OnInit {
     this.editingNumber.set(accNo);
   }
 
+  toggleNewPin(): void {
+    this.newPinVisible.update(visible => !visible);
+  }
+
+  toggleAccountPin(accNo: string): void {
+    this.visibleAccountPin.update(visibleAccNo => visibleAccNo === accNo ? null : accNo);
+  }
+
   save(account: Account): void {
     this.accountService.updateAccount(account.accNo, { accPin: account.accPin, accountType: account.accountType }).subscribe({
-      next: () => this.editingNumber.set(null),
+      next: () => {
+        this.editingNumber.set(null);
+        this.successMessage.set('Account saved successfully.');
+      },
       error: () => this.errorMessage.set('Failed to update account.')
     });
   }
@@ -51,8 +67,16 @@ export class AccountDetailsComponent implements OnInit {
   }
 
   delete(accNo: string): void {
-    this.accountService.deleteAccount(accNo).subscribe({
-      next: () => this.accounts = this.accounts.filter(a => a.accNo !== accNo),
+    const account = this.accounts.find(item => item.accNo === accNo);
+    if (!account?.customerId) {
+      this.errorMessage.set('Account customer not found.');
+      return;
+    }
+    this.customerService.deleteAccountFromCustomer(account.customerId, accNo).subscribe({
+      next: () => {
+        this.accounts = this.accounts.filter(a => a.accNo !== accNo);
+        this.successMessage.set('Account deleted successfully.');
+      },
       error: () => this.errorMessage.set('Failed to delete account.')
     });
   }
@@ -68,6 +92,7 @@ export class AccountDetailsComponent implements OnInit {
       next: created => {
         this.accounts = [...this.accounts, created];
         this.newAccount = this.emptyAccount();
+        this.successMessage.set('Account added successfully.');
       },
       error: () => this.errorMessage.set('Failed to create account. Check that the customer ID exists.')
     });

@@ -7,6 +7,12 @@
         <button type="button" class="btn-close" (click)="errorMessage.set(null)"></button>
       </div>
     }
+    @if (successMessage()) {
+      <div class="alert alert-success alert-dismissible" role="alert">
+        {{ successMessage() }}
+        <button type="button" class="btn-close" (click)="successMessage.set(null)"></button>
+      </div>
+    }
 
     <h6 class="mb-3">Add New Account</h6>
     <form (ngSubmit)="addAccount()" class="row g-2 align-items-end mb-4">
@@ -23,7 +29,10 @@
       </div>
       <div class="col-12 col-md">
         <label for="newAccPin" class="form-label">Account PIN</label>
-        <input id="newAccPin" type="password" class="form-control form-control-sm" [(ngModel)]="newAccount.accPin" name="newAccPin" required>
+        <div class="input-group input-group-sm">
+          <input id="newAccPin" [type]="newPinVisible() ? 'text' : 'password'" class="form-control" [(ngModel)]="newAccount.accPin" name="newAccPin" required>
+          <button type="button" class="btn btn-outline-secondary" [attr.aria-label]="newPinVisible() ? 'Hide account PIN' : 'Show account PIN'" [title]="newPinVisible() ? 'Hide account PIN' : 'Show account PIN'" (click)="toggleNewPin()">&#128065;</button>
+        </div>
       </div>
       <div class="col-12 col-md-auto">
         <button type="submit" class="btn btn-sm btn-success">Add Account</button>
@@ -64,8 +73,11 @@
                   </select>
                 </td>
                 <td>
-                  <input type="password" class="form-control form-control-sm" [(ngModel)]="account.accPin"
-                         [name]="'pin-' + account.accNo" [attr.aria-label]="'PIN for ' + account.accNo">
+                      <div class="input-group input-group-sm">
+                        <input [type]="visibleAccountPin() === account.accNo ? 'text' : 'password'" class="form-control" [(ngModel)]="account.accPin"
+                          [name]="'pin-' + account.accNo" [attr.aria-label]="'PIN for ' + account.accNo">
+                        <button type="button" class="btn btn-outline-secondary" [attr.aria-label]="visibleAccountPin() === account.accNo ? 'Hide account PIN' : 'Show account PIN'" [title]="visibleAccountPin() === account.accNo ? 'Hide account PIN' : 'Show account PIN'" (click)="toggleAccountPin(account.accNo)">&#128065;</button>
+                      </div>
                 </td>
                 <td class="d-flex gap-1">
                   <button type="button" class="btn btn-sm btn-primary" (click)="save(account)">Save</button>
