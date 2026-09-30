@@ -7,8 +7,14 @@
         <button type="button" class="btn-close" (click)="errorMessage.set(null)"></button>
       </div>
     }
+    @if (successMessage()) {
+      <div class="alert alert-success alert-dismissible" role="alert">
+        {{ successMessage() }}
+        <button type="button" class="btn-close" (click)="successMessage.set(null)"></button>
+      </div>
+    }
 
-    <h6 class="mb-3">Add New Customer</h6>
+    <h6 class="mb-3">Add Customer &amp; Account</h6>
     <form (ngSubmit)="addCustomer()" class="row g-2 align-items-end mb-4">
       <div class="col-12 col-md">
         <label for="newCustomerName" class="form-label">Name</label>
@@ -22,8 +28,22 @@
         <label for="newAddress" class="form-label">Address</label>
         <input id="newAddress" type="text" class="form-control form-control-sm" [(ngModel)]="newCustomer.address" name="newAddress">
       </div>
+      <div class="col-12 col-md">
+        <label for="newAccountType" class="form-label">Account Type</label>
+        <select id="newAccountType" class="form-select form-select-sm" [(ngModel)]="newAccount.accountType" name="newAccountType">
+          <option value="SAVINGS">Savings</option>
+          <option value="CURRENT">Current</option>
+        </select>
+      </div>
+      <div class="col-12 col-md">
+        <label for="newAccPin" class="form-label">Account PIN</label>
+        <div class="input-group input-group-sm">
+          <input id="newAccPin" [type]="newPinVisible() ? 'text' : 'password'" class="form-control" [(ngModel)]="newAccount.accPin" name="newAccPin" required>
+          <button type="button" class="btn btn-outline-secondary" [attr.aria-label]="newPinVisible() ? 'Hide account PIN' : 'Show account PIN'" [title]="newPinVisible() ? 'Hide account PIN' : 'Show account PIN'" (click)="toggleNewPin()">&#128065;</button>
+        </div>
+      </div>
       <div class="col-12 col-md-auto">
-        <button type="submit" class="btn btn-sm btn-success">Add Customer</button>
+        <button type="submit" class="btn btn-sm btn-success">Add Customer &amp; Account</button>
       </div>
     </form>
 
@@ -35,38 +55,76 @@
             <th scope="col">Name</th>
             <th scope="col">Age</th>
             <th scope="col">Address</th>
+            <th scope="col">Account Number</th>
+            <th scope="col">Account Type</th>
             <th scope="col">Actions</th>
           </tr>
         </thead>
         <tbody>
-          @for (customer of customers; track customer.customerId) {
+          @for (row of rows; track row.account?.accNo ?? row.customer.customerId) {
             <tr>
-              @if (!isEditing(customer.customerId)) {
-                <td>{{ customer.customerId }}</td>
-                <td>{{ customer.name }}</td>
-                <td>{{ customer.age }}</td>
-                <td>{{ customer.address }}</td>
+              @if (!isEditing(row.customer.customerId)) {
+                <td>{{ row.customer.customerId }}</td>
+                <td>{{ row.customer.name }}</td>
+                <td>{{ row.customer.age }}</td>
+                <td>{{ row.customer.address }}</td>
+              } @else {
+                <td>{{ row.customer.customerId }}</td>
+                <td>
+                  <input type="text" class="form-control form-control-sm" [(ngModel)]="row.customer.name"
+                         [name]="'name-' + row.customer.customerId" [attr.aria-label]="'Name for ' + row.customer.customerId">
+                </td>
+                <td>
+                  <input type="number" min="0" class="form-control form-control-sm" [(ngModel)]="row.customer.age"
+                         [name]="'age-' + row.customer.customerId" [attr.aria-label]="'Age for ' + row.customer.customerId">
+                </td>
+                <td>
+                  <input type="text" class="form-control form-control-sm" [(ngModel)]="row.customer.address"
+                         [name]="'address-' + row.customer.customerId" [attr.aria-label]="'Address for ' + row.customer.customerId">
+                </td>
+              }
+              @if (row.account; as account) {
+                @if (!isAccountEditing(account.accNo)) {
+                  <td>{{ account.accNo }}</td>
+                  <td>{{ account.accountType }}</td>
+                } @else {
+                  <td>{{ account.accNo }}</td>
+                  <td>
+                    <select class="form-select form-select-sm" [(ngModel)]="account.accountType"
+                            [name]="'type-' + account.accNo" [attr.aria-label]="'Account type for ' + account.accNo">
+                      <option value="SAVINGS">Savings</option>
+                      <option value="CURRENT">Current</option>
+                    </select>
+                          <div class="input-group input-group-sm mt-1">
+                       <input [type]="visibleAccountPin() === account.accNo ? 'text' : 'password'" class="form-control" [(ngModel)]="account.accPin"
+                         [name]="'pin-' + account.accNo" [attr.aria-label]="'PIN for ' + account.accNo">
+                       <button type="button" class="btn btn-outline-secondary" [attr.aria-label]="visibleAccountPin() === account.accNo ? 'Hide account PIN' : 'Show account PIN'" [title]="visibleAccountPin() === account.accNo ? 'Hide account PIN' : 'Show account PIN'" (click)="toggleAccountPin(account.accNo)">&#128065;</button>
+                          </div>
+                  </td>
+                }
                 <td class="d-flex gap-1">
-                  <button type="button" class="btn btn-sm btn-outline-primary" (click)="edit(customer.customerId)">Edit</button>
-                  <button type="button" class="btn btn-sm btn-outline-danger" (click)="delete(customer.customerId)">Delete</button>
+                  @if (isEditing(row.customer.customerId)) {
+                    <button type="button" class="btn btn-sm btn-primary" (click)="save(row.customer)">Save Customer</button>
+                    <button type="button" class="btn btn-sm btn-secondary" (click)="cancel()">Cancel</button>
+                  } @else if (isAccountEditing(account.accNo)) {
+                    <button type="button" class="btn btn-sm btn-primary" (click)="saveAccount(account)">Save Account</button>
+                    <button type="button" class="btn btn-sm btn-secondary" (click)="cancel()">Cancel</button>
+                  } @else {
+                    <button type="button" class="btn btn-sm btn-outline-primary" (click)="edit(row.customer.customerId)">Edit Customer</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="editAccount(account.accNo)">Edit Account</button>
+                    <button type="button" class="btn btn-sm btn-danger" title="Deletes this customer and all accounts" (click)="delete(row.customer.customerId)">Delete</button>
+                  }
                 </td>
               } @else {
-                <td>{{ customer.customerId }}</td>
-                <td>
-                  <input type="text" class="form-control form-control-sm" [(ngModel)]="customer.name"
-                         [name]="'name-' + customer.customerId" [attr.aria-label]="'Name for ' + customer.customerId">
-                </td>
-                <td>
-                  <input type="number" min="0" class="form-control form-control-sm" [(ngModel)]="customer.age"
-                         [name]="'age-' + customer.customerId" [attr.aria-label]="'Age for ' + customer.customerId">
-                </td>
-                <td>
-                  <input type="text" class="form-control form-control-sm" [(ngModel)]="customer.address"
-                         [name]="'address-' + customer.customerId" [attr.aria-label]="'Address for ' + customer.customerId">
-                </td>
+                <td colspan="2" class="text-muted">No account</td>
                 <td class="d-flex gap-1">
-                  <button type="button" class="btn btn-sm btn-primary" (click)="save(customer)">Save</button>
-                  <button type="button" class="btn btn-sm btn-secondary" (click)="cancel()">Cancel</button>
+                  @if (isEditing(row.customer.customerId)) {
+                    <button type="button" class="btn btn-sm btn-primary" (click)="save(row.customer)">Save Customer</button>
+                    <button type="button" class="btn btn-sm btn-secondary" (click)="cancel()">Cancel</button>
+                  } @else {
+                    <button type="button" class="btn btn-sm btn-outline-primary" (click)="edit(row.customer.customerId)">Edit Customer</button>
+                    <button type="button" class="btn btn-sm btn-danger" title="Deletes this customer and all accounts" (click)="delete(row.customer.customerId)">Delete</button>
+                  }
                 </td>
               }
             </tr>

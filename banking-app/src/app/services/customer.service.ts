@@ -1,16 +1,26 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, switchMap } from 'rxjs';
 import { API_BASE_URL } from '../core/api-config';
+
+export interface AccountDetails {
+  id?: number;
+  accNo?: string;
+  accPin: string;
+  accountType: 'SAVINGS' | 'CURRENT';
+}
 
 export interface Customer {
   customerId: number;
   name: string;
   age: number;
   address: string;
+  accountDetails: AccountDetails[];
 }
 
-export type NewCustomer = Omit<Customer, 'customerId'>;
+export type NewCustomer = Omit<Customer, 'customerId' | 'accountDetails'> & {
+  accountDetails?: AccountDetails[];
+};
 
 @Injectable({ providedIn: 'root' })
 export class CustomerService {
@@ -31,6 +41,17 @@ export class CustomerService {
 
   updateCustomer(customerId: number, customer: NewCustomer): Observable<Customer> {
     return this.http.put<Customer>(`${API_BASE_URL}/updateCustomer/${customerId}`, customer);
+  }
+
+  deleteAccountFromCustomer(customerId: number, accNo: string): Observable<Customer> {
+    return this.getCustomerById(customerId).pipe(
+      switchMap(customer => this.updateCustomer(customerId, {
+        name: customer.name,
+        age: customer.age,
+        address: customer.address,
+        accountDetails: (customer.accountDetails ?? []).filter(account => account.accNo !== accNo)
+      }))
+    );
   }
 
   deleteCustomer(customerId: number): Observable<void> {
